@@ -28,6 +28,9 @@ from .wrapper import ManagedTarget, tick
 
 logging.basicConfig(level=logging.INFO)
 
+# Target definitions: one entry per managed infrastructure component.
+# Each target combines a backend type, git repository, and unique name.
+# The name serves as both the CLI argument and the lock/state file identifier.
 TARGETS: dict[str, ManagedTarget] = {
     "pi-livingroom": ManagedTarget(
         name="pi-livingroom",
@@ -55,6 +58,20 @@ TARGETS: dict[str, ManagedTarget] = {
 
 
 def main() -> None:
+    """CLI entry point for single-target reconciliation.
+
+    Accepts a --target argument to select which target to reconcile from the
+    TARGETS registry. Designed to be invoked by systemd timers or cron jobs
+    with specific target names.
+
+    Usage:
+        python -m gitops_reconciler.example --target pi-livingroom
+        python -m gitops_reconciler.example --target staging-compose
+        python -m gitops_reconciler.example --target prod-network
+
+    Each invocation runs exactly one reconciliation cycle (tick) for the selected
+    target. For continuous reconciliation, schedule this command to run periodically.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", required=True, choices=sorted(TARGETS))
     args = parser.parse_args()

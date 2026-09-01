@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
+from gitops_reconciler.backends import BackEnd
 from gitops_reconciler.models import ApplyResult, Status
 from gitops_reconciler.wrapper import (
     ManagedTarget,
@@ -20,7 +21,7 @@ from gitops_reconciler.wrapper import (
 )
 
 
-class MockBackend:
+class MockBackend(BackEnd):
     """A simple mock backend for testing."""
 
     def __init__(self, status: Status) -> None:
@@ -249,7 +250,7 @@ class TestTick:
     def test_tick_backend_exception_handled(self):
         """tick handles exceptions from backend.apply()."""
 
-        class FailingBackend:
+        class FailingBackend(BackEnd):
             def apply(self) -> Status:
                 raise RuntimeError("Backend exploded")
 

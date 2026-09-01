@@ -8,6 +8,7 @@ import pytest
 
 from gitops_reconciler.backends import (
     AnsibleBackend,
+    BackEnd,
     CloudFormationBackend,
     ComposeBackend,
     PiBackend,
@@ -445,6 +446,30 @@ class TestPiBackend:
                     assert called_cmd[1] == "pi.lan"
 
 
+class TestBackEndABC:
+    """Tests for BackEnd abstract base class."""
+
+    def test_all_backends_inherit_from_backend(self):
+        """All backend classes inherit from BackEnd ABC."""
+        backends = [
+            TerraformBackend,
+            PulumiBackend,
+            CloudFormationBackend,
+            ComposeBackend,
+            AnsibleBackend,
+            PiBackend,
+        ]
+        for backend_class in backends:
+            assert issubclass(backend_class, BackEnd), (
+                f"{backend_class.__name__} must inherit from BackEnd"
+            )
+
+    def test_backend_is_abc(self):
+        """BackEnd cannot be instantiated directly."""
+        with pytest.raises(TypeError, match="Can't instantiate abstract class"):
+            BackEnd()  # type: ignore[abstract]
+
+
 class TestBuildBackend:
     """Tests for the build_backend factory function."""
 
@@ -453,6 +478,7 @@ class TestBuildBackend:
         config = TerraformConfig(workdir=Path("/tf"))
         backend = build_backend(config)
         assert isinstance(backend, TerraformBackend)
+        assert isinstance(backend, BackEnd)
 
     def test_build_pulumi(self):
         """build_backend creates PulumiBackend from PulumiConfig."""
