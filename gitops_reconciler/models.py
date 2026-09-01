@@ -5,16 +5,17 @@ design doc's reasoning. Each backend's config is fully its own; the
 discriminated union at the bottom is only for callers who want to load
 target definitions from a single YAML/JSON file and dispatch by `kind`.
 """
+
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
 
-class ApplyResult(str, Enum):
+class ApplyResult(StrEnum):
     NO_CHANGE = "no_change"
     CHANGED = "changed"
     FAILED = "failed"
@@ -65,19 +66,15 @@ class PiConfig(BaseModel, frozen=True):
     kind: Literal["pi"] = "pi"
     host: str  # "local" if the reconciler process runs on the Pi itself
     repo_path: Path  # checked-out config repo *on the Pi*
-    apply_command: list[str] = Field(
-        default_factory=lambda: ["docker", "compose", "up", "-d"]
-    )
+    apply_command: list[str] = Field(default_factory=lambda: ["docker", "compose", "up", "-d"])
 
 
 BackendConfig = Annotated[
-    Union[
-        TerraformConfig,
-        PulumiConfig,
-        CloudFormationConfig,
-        ComposeConfig,
-        AnsibleConfig,
-        PiConfig,
-    ],
+    TerraformConfig
+    | PulumiConfig
+    | CloudFormationConfig
+    | ComposeConfig
+    | AnsibleConfig
+    | PiConfig,
     Field(discriminator="kind"),
 ]

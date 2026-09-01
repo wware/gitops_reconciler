@@ -1,3 +1,4 @@
+from .backends import BackEnd, build_backend
 from .models import (
     AnsibleConfig,
     ApplyResult,
@@ -9,8 +10,7 @@ from .models import (
     Status,
     TerraformConfig,
 )
-from .backends import BackEnd, build_backend
-from .wrapper import ManagedTarget, tick, run, backend_lock
+from .wrapper import ManagedTarget, backend_lock, run, tick
 
 __all__ = [
     "AnsibleConfig",

@@ -4,18 +4,20 @@ Nothing here knows what a Terraform module or a docker-compose file is —
 that's `backends.py`'s job. This module only knows: pull git, take a lock,
 call `apply()`, record what happened, and tell someone if it failed.
 """
+
 from __future__ import annotations
 
 import fcntl
 import json
 import logging
 import subprocess
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Any
 
-from .backends import BackEnd
+from pydantic import BaseModel, Field, field_validator
+
 from .models import ApplyResult, Status
 
 logger = logging.getLogger("gitops_reconciler.wrapper")
@@ -30,8 +32,7 @@ def default_notifier(target_name: str, status: Status) -> None:
     logger.error("RECONCILE FAILED for %s: %s", target_name, status.message)
 
 
-@dataclass(frozen=True)
-class ManagedTarget:
+class ManagedTarget(BaseModel):
     """One (name, backend, repo) tuple with its own lock, schedule, and
     provenance file.
 
@@ -42,10 +43,22 @@ class ManagedTarget:
     `name=f"pi-{hostname}"`. `backend_lock` does no composition of its own.
     """
 
+    model_config = {"frozen": True, "arbitrary_types_allowed": True}
+
     name: str
-    backend: BackEnd
+    backend: Any  # BackEnd protocol - must have apply(), destroy(), get_outputs()
     repo: Path
-    notify: Notifier = field(default=default_notifier)
+    notify: Notifier = Field(default=default_notifier)
+
+    @field_validator("backend")
+    @classmethod
+    def validate_backend(cls, v: Any) -> Any:
+        """Validate that backend has required BackEnd protocol methods."""
+        if not all(hasattr(v, method) for method in ("apply", "destroy", "get_outputs")):
+            raise ValueError(
+                "backend must implement BackEnd protocol (apply, destroy, get_outputs)"
+            )
+        return v
 
 
 @contextmanager
@@ -75,7 +88,9 @@ def sync_git(repo: Path) -> None:
 def current_sha(repo: Path) -> str:
     result = subprocess.run(
         ["git", "-C", str(repo), "rev-parse", "HEAD"],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return result.stdout.strip()
 
@@ -95,7 +110,9 @@ def last_recorded_sha(target_name: str) -> str | None:
     path = _state_file(target_name)
     if not path.exists():
         return None
-    return json.loads(path.read_text()).get("sha")
+    data = json.loads(path.read_text())
+    sha: str | None = data.get("sha")
+    return sha
 
 
 def tick(target: ManagedTarget) -> None:

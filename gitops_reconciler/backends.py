@@ -6,6 +6,7 @@ hashing rendered state and comparing to the hash from the last successful
 apply. That asymmetry is real signal about which backends are cheap to
 add and which require you to build the diff yourself.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -64,9 +65,7 @@ class TerraformBackend:
         )
 
     def destroy(self) -> Status:
-        result = _run(
-            ["terraform", "destroy", "-auto-approve", "-no-color"], cwd=self._cfg.workdir
-        )
+        result = _run(["terraform", "destroy", "-auto-approve", "-no-color"], cwd=self._cfg.workdir)
         return Status(
             result=ApplyResult.FAILED if result.returncode else ApplyResult.CHANGED,
             message=(result.stdout + result.stderr)[-2000:],
@@ -174,7 +173,13 @@ class ComposeBackend:
 
     def get_outputs(self) -> dict[str, Any]:
         cmd = self._ssh_prefix() + [
-            "docker", "compose", "-f", str(self._cfg.compose_file), "ps", "--format", "json",
+            "docker",
+            "compose",
+            "-f",
+            str(self._cfg.compose_file),
+            "ps",
+            "--format",
+            "json",
         ]
         result = _run(cmd)
         return {"ps": result.stdout} if result.returncode == 0 else {}
@@ -280,6 +285,7 @@ _BUILDERS = {
 def build_backend(config: Any) -> BackEnd:
     """Factory: maps a config instance to its concrete backend by type."""
     try:
-        return _BUILDERS[type(config)](config)
-    except KeyError:
-        raise TypeError(f"no backend registered for config type {type(config).__name__}")
+        builder = _BUILDERS[type(config)]  # type: ignore[index]
+        return builder(config)  # type: ignore[no-any-return]
+    except KeyError as exc:
+        raise TypeError(f"no backend registered for config type {type(config).__name__}") from exc

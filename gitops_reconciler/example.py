@@ -15,6 +15,7 @@ by its own systemd timer:
 Swap the OnCalendar value and --target per unit; one pair of timer+service
 files per managed target keeps them scheduling and failing independently.
 """
+
 from __future__ import annotations
 
 import argparse
