@@ -181,16 +181,19 @@ the target configuration:
 ```python
 from pydantic import BaseModel, Field
 
+
 class ManagedTarget(BaseModel):
     """One (name, backend, repo) tuple with its own lock, schedule, and
     provenance file.
     """
+
     model_config = {"frozen": True, "arbitrary_types_allowed": True}
 
     name: str
     backend: BackEnd  # Any object implementing the BackEnd protocol
     repo: Path
     notify: Notifier = Field(default=default_notifier)
+
 
 def tick(target: ManagedTarget) -> None:
     """One reconciliation attempt for one target."""
