@@ -39,3 +39,6 @@ Thumbs.db
 # GitOps reconciler runtime state
 .last_applied_hash
 items.db
+
+# User-customized promotion script; copy promote.example.py to promote.py
+/promote.py

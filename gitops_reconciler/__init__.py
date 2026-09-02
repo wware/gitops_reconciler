@@ -10,7 +10,7 @@ from .models import (
     Status,
     TerraformConfig,
 )
-from .wrapper import ManagedTarget, backend_lock, run, tick
+from .wrapper import ManagedTarget, backend_lock, last_recorded_sha, record_last_sha, run, tick
 
 __all__ = [
     "AnsibleConfig",
@@ -26,6 +26,8 @@ __all__ = [
     "TerraformConfig",
     "backend_lock",
     "build_backend",
+    "last_recorded_sha",
+    "record_last_sha",
     "run",
     "tick",
 ]

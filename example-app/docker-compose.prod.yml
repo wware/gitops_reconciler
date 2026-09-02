@@ -1,0 +1,7 @@
+services:
+  demo-app:
+    image: gitops-demo-app:v1.0.0
+    ports:
+      - "9002:8080"
+    environment:
+      - DEMO=prod

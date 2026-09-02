@@ -2,7 +2,7 @@
 
 ## Quick Start
 
-**Want to see it in action?** Check out the [live demo](DEMO.md) that shows the reconciler managing a Docker Compose stack on your laptop.
+**Want to see it in action?** Check out the [live demo](DEMO.md) that shows the reconciler managing a Docker Compose stack on your laptop, or [PROMOTION.md](PROMOTION.md) for a staging -> production promotion workflow built on the same primitives.
 
 ```bash
 # Install dependencies with uv
@@ -392,7 +392,9 @@ gitops_reconciler/
 
 See `gitops_reconciler/example.py` for a complete example showing:
 
-- Three different backend types (Terraform, Compose, Pi)
+- Multiple backend types (Compose, Pi) managed by one reconciler
+- A matched staging/prod `ComposeConfig` pair sharing one repo — see
+  [PROMOTION.md](PROMOTION.md) for the promotion workflow this enables
 - Independent scheduling via systemd timers
 - Command-line interface for invoking specific targets
 

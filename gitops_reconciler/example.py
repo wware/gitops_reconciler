@@ -23,10 +23,17 @@ import logging
 from pathlib import Path
 
 from .backends import build_backend
-from .models import ComposeConfig, PiConfig, TerraformConfig
+from .models import ComposeConfig, PiConfig
 from .wrapper import ManagedTarget, tick
 
 logging.basicConfig(level=logging.INFO)
+
+# Demo repo shared by the staging/prod pair below. Both targets watch the
+# same repo but apply different compose files — see PROMOTION.md for how
+# this composes into a promotion workflow.
+DEMO_REPO = Path(__file__).resolve().parent.parent / "example-app"
+STAGING_COMPOSE = DEMO_REPO / "docker-compose.staging.yml"
+PROD_COMPOSE = DEMO_REPO / "docker-compose.prod.yml"
 
 # Target definitions: one entry per managed infrastructure component.
 # Each target combines a backend type, git repository, and unique name.
@@ -39,20 +46,27 @@ TARGETS: dict[str, ManagedTarget] = {
         ),
         repo=Path("/home/pi/gitops-config"),
     ),
-    "staging-compose": ManagedTarget(
-        name="staging-compose",
+    "demo-app-staging": ManagedTarget(
+        name="demo-app-staging",
         backend=build_backend(
             ComposeConfig(
-                compose_file=Path("/srv/staging/docker-compose.yml"),
-                host="staging.internal",
+                compose_file=STAGING_COMPOSE,
+                host="local",
+                project_name="gitops-demo-staging",
             )
         ),
-        repo=Path("/srv/staging"),
+        repo=DEMO_REPO,
     ),
-    "prod-network": ManagedTarget(
-        name="prod-network",
-        backend=build_backend(TerraformConfig(workdir=Path("/srv/infra/network"))),
-        repo=Path("/srv/infra"),
+    "demo-app-prod": ManagedTarget(
+        name="demo-app-prod",
+        backend=build_backend(
+            ComposeConfig(
+                compose_file=PROD_COMPOSE,
+                host="local",
+                project_name="gitops-demo-prod",
+            )
+        ),
+        repo=DEMO_REPO,
     ),
 }
 
@@ -66,8 +80,8 @@ def main() -> None:
 
     Usage:
         python -m gitops_reconciler.example --target pi-livingroom
-        python -m gitops_reconciler.example --target staging-compose
-        python -m gitops_reconciler.example --target prod-network
+        python -m gitops_reconciler.example --target demo-app-staging
+        python -m gitops_reconciler.example --target demo-app-prod
 
     Each invocation runs exactly one reconciliation cycle (tick) for the selected
     target. For continuous reconciliation, schedule this command to run periodically.
