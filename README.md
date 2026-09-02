@@ -51,10 +51,11 @@ there's no meaningful privilege boundary between "the wrapper" and "the
 Pi it manages" worth protecting, so running the reconciler loop on the
 Pi itself (or on a machine on the same LAN) is fine.
 
-## The `BackEnd` protocol
+## The `BackEnd` ABC
 
 ```python
-from typing import Protocol, Dict, Any
+from abc import ABC, abstractmethod
+from typing import Dict, Any
 from enum import Enum
 from pydantic import BaseModel
 
@@ -70,9 +71,14 @@ class Status(BaseModel, frozen=True):
     message: str = ""
 
 
-class BackEnd(Protocol):
+class BackEnd(ABC):
+    @abstractmethod
     def apply(self) -> Status: ...
+
+    @abstractmethod
     def destroy(self) -> Status: ...
+
+    @abstractmethod
     def get_outputs(self) -> Dict[str, Any]: ...
 ```
 
@@ -80,7 +86,7 @@ Three methods, all argument-free. Anything a specific backend needs
 (working directory, stack name, compose file path, SSH target, var files)
 is bound at construction time — `TerraformBackend(workdir=...)`,
 `PulumiBackend(stack=...)`, `ComposeBackend(compose_file=..., host=...)` —
-so every concrete backend satisfies the same Protocol regardless of how
+so every concrete backend inherits from the same ABC regardless of how
 different its internals are.
 
 Per-backend config is deliberately not unified into one shared struct.
@@ -89,7 +95,7 @@ CloudFormation's account/region/stack-name don't overlap enough to be
 worth forcing into a lowest-common-denominator shape with unused fields
 per backend. A discriminated union of per-backend frozen config models —
 one shape per backend, each fully its own — is the intended approach;
-the Protocol only constrains the three methods, not how a backend gets
+the ABC only constrains the three methods, not how a backend gets
 configured.
 
 ## Design reasoning
@@ -277,7 +283,7 @@ backends are "free" idempotency and which aren't.
 
 ### ✅ Completed
 
-- **Core Protocol**: `BackEnd` protocol with `apply()`, `destroy()`, `get_outputs()`
+- **Core ABC**: `BackEnd` abstract base class with `apply()`, `destroy()`, `get_outputs()`
 - **Configuration Models**: Frozen Pydantic models for all 6 backend types
   - `TerraformConfig` / `PulumiConfig` / `CloudFormationConfig`
   - `ComposeConfig` / `AnsibleConfig` / `PiConfig`
@@ -412,4 +418,4 @@ tick(target)
 - **Type Safety**: Strict mypy compliance throughout
 - **Testability**: Comprehensive unit tests with mocked external dependencies
 - **Simplicity**: Small, focused abstractions with clear responsibilities
-- **Protocol-based**: Duck typing via Protocol for backend flexibility
+- **ABC-based**: Explicit inheritance via abstract base class for backend implementations

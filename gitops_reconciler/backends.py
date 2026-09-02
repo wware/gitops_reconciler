@@ -442,14 +442,14 @@ class PiBackend(BackEnd):
         return [] if self._cfg.host in ("", "local") else ["ssh", self._cfg.host]
 
     def _content_hash(self) -> str:
-        """Compute SHA256 hash of entire repo tree (excluding .git).
+        """Compute SHA256 hash of entire repo tree (excluding .git and hash marker).
 
         Returns:
             Hexadecimal digest of the repo's content hash
         """
         digest = hashlib.sha256()
         for path in sorted(self._cfg.repo_path.rglob("*")):
-            if path.is_file() and ".git" not in path.parts:
+            if path.is_file() and ".git" not in path.parts and path != self._hash_marker:
                 digest.update(path.read_bytes())
         return digest.hexdigest()
 

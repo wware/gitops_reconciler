@@ -1,8 +1,8 @@
 """Simple FastAPI CRUD app with SQLite."""
 
 import random
-import string
 import sqlite3
+import string
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -53,7 +53,7 @@ def init_db():
 
 def generate_random_name(length: int = 10) -> str:
     """Generate a random lowercase name."""
-    return ''.join(random.choices(string.ascii_lowercase, k=length))
+    return "".join(random.choices(string.ascii_lowercase, k=length))
 
 
 @app.on_event("startup")
@@ -274,4 +274,5 @@ async def delete_all_items():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8080)

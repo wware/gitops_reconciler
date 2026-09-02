@@ -445,6 +445,59 @@ class TestPiBackend:
                     assert called_cmd[0] == "ssh"
                     assert called_cmd[1] == "pi.lan"
 
+    def test_idempotency_integration(self, tmp_path):
+        """Integration test: PiBackend with real files converges to NO_CHANGE.
+
+        Regression test for hash marker exclusion bug. Without proper exclusion,
+        the hash marker itself gets included in the hash computation, causing
+        every apply to see a different hash and never converge.
+        """
+        # Create a real repo with a test file
+        repo_dir = tmp_path / "test_repo"
+        repo_dir.mkdir()
+        test_file = repo_dir / "config.txt"
+        test_file.write_text("initial config")
+
+        config = PiConfig(host="local", repo_path=repo_dir, apply_command=["echo", "applied"])
+        backend = PiBackend(config)
+
+        # Mock _run to avoid actually executing commands
+        mock_result = Mock()
+        mock_result.returncode = 0
+        mock_result.stdout = "applied"
+        mock_result.stderr = ""
+
+        with patch("gitops_reconciler.backends._run", return_value=mock_result):
+            # First apply should return CHANGED (no previous hash)
+            status1 = backend.apply()
+            assert status1.result == ApplyResult.CHANGED
+
+            # Second apply with no file changes should return NO_CHANGE
+            # This would fail with the bug because the hash marker is included in the hash
+            status2 = backend.apply()
+            assert status2.result == ApplyResult.NO_CHANGE, (
+                "Second apply with unchanged files should return NO_CHANGE"
+            )
+
+            # Third apply should still be NO_CHANGE (convergence)
+            status3 = backend.apply()
+            assert status3.result == ApplyResult.NO_CHANGE, (
+                "Subsequent applies should remain converged"
+            )
+
+            # Now change a real file - should trigger CHANGED again
+            test_file.write_text("updated config")
+            status4 = backend.apply()
+            assert status4.result == ApplyResult.CHANGED, (
+                "Apply after file change should return CHANGED"
+            )
+
+            # And converge again
+            status5 = backend.apply()
+            assert status5.result == ApplyResult.NO_CHANGE, (
+                "Apply after changed file should converge again"
+            )
+
 
 class TestBackEndABC:
     """Tests for BackEnd abstract base class."""
