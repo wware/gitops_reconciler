@@ -35,3 +35,7 @@ uv.lock
 # OS
 .DS_Store
 Thumbs.db
+
+# GitOps reconciler runtime state
+.last_applied_hash
+items.db

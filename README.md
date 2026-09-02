@@ -2,9 +2,14 @@
 
 ## Quick Start
 
+**Want to see it in action?** Check out the [live demo](DEMO.md) that shows the reconciler managing a Docker Compose stack on your laptop.
+
 ```bash
 # Install dependencies with uv
 uv sync --all-extras
+
+# Run the demo (starts a FastAPI app via Docker Compose)
+./watch_and_reconcile.sh
 
 # Run tests
 uv run pytest
